@@ -5,23 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Guards of Atlantis 6P Randomizer</title>
 <style>
-body{margin:0;font-family:Georgia,serif;background:radial-gradient(circle at top,#17496b,#06101d 70%);color:#f7ead0}
+body{margin:0;font-family:Georgia,serif;background:radial-gradient(circle at top,#18557a,#06101d 70%);color:#f7ead0}
 .wrap{max-width:980px;margin:auto;padding:24px 16px}
 .hero{text-align:center;padding:34px 18px;border:2px solid #d4ad57;border-radius:24px;background:linear-gradient(rgba(4,13,26,.55),rgba(4,13,26,.95)),radial-gradient(circle,#2b7fa8,transparent 62%);box-shadow:0 0 38px rgba(212,173,87,.25)}
 h1{font-size:36px;margin:0;color:#ffd36b}
 .subtitle{margin-top:8px;font-size:17px;opacity:.9}
 .card,.team{margin-top:22px;background:rgba(255,255,255,.07);border:1px solid rgba(255,211,107,.35);border-radius:18px;padding:20px}
-select{padding:10px;border-radius:10px;border:1px solid #d4ad57;background:#101d2f;color:#f7ead0;font-size:16px}
+select{width:100%;margin-top:8px;padding:12px;border-radius:10px;border:1px solid #d4ad57;background:#101d2f;color:#f7ead0;font-size:16px}
 .packs{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:14px}
 .pack{border:1px solid rgba(255,211,107,.35);padding:11px;border-radius:12px;background:rgba(0,0,0,.18)}
 button{width:100%;margin-top:20px;padding:15px;border:0;border-radius:14px;background:linear-gradient(135deg,#ffd36b,#b9812d);color:#07111f;font-weight:bold;font-size:17px}
 .teams{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin-top:24px}
 .team{border:2px solid #d4ad57;background:linear-gradient(180deg,rgba(29,75,108,.9),rgba(8,20,37,.96))}
 .team h2{color:#ffd36b;margin-top:0}
-.pick{padding:12px;margin:10px 0;border-radius:12px;background:rgba(255,255,255,.08);border-left:5px solid #ffd36b}
-.meta{font-size:13px;opacity:.82;margin-top:4px}
+.playerBox{padding:12px;margin:12px 0;border-radius:12px;background:rgba(255,255,255,.08);border-left:5px solid #ffd36b}
+.pick{margin:6px 0}
+.meta{font-size:13px;opacity:.82}
 .score{margin-top:12px;font-weight:bold;color:#ffd36b}
 .note{font-size:14px;opacity:.78;margin-top:12px}
+.bonus{border-left-color:#8ee7ff}
 </style>
 </head>
 
@@ -29,23 +31,24 @@ button{width:100%;margin-top:20px;padding:15px;border:0;border-radius:14px;backg
 <div class="wrap">
   <section class="hero">
     <h1>Guards of Atlantis</h1>
-    <div class="subtitle">6-Player Balanced Team Randomizer</div>
+    <div class="subtitle">6-Player Balanced Draft Randomizer</div>
   </section>
 
   <section class="card">
-    <label for="players">Number of players:</label>
-    <select id="players">
-      <option value="4">4 players</option>
-      <option value="6" selected>6 players</option>
-      <option value="8">8 players</option>
-      <option value="10">10 players</option>
+    <label>Draft format:</label>
+    <select id="format">
+      <option value="single">1 hero per player</option>
+      <option value="twoPlusBonus" selected>2 heroes per player + 2 team bonus heroes</option>
+      <option value="threeEach">3 heroes per player</option>
+      <option value="teamPool">Team draft pool: 6 heroes per team</option>
+      <option value="bigTeamPool">Big team pool: 9 heroes per team</option>
     </select>
 
     <h3>Expansions owned</h3>
     <div class="packs" id="packList"></div>
 
-    <button onclick="generateTeams()">Generate Balanced Teams</button>
-    <div class="note">Lower balance score means a stronger hero. Teams are dealt to keep total strength close.</div>
+    <button onclick="generateTeams()">Generate Teams</button>
+    <div class="note">Teams are balanced by approximate hero strength. Lower score = stronger pool.</div>
   </section>
 
   <section id="results"></section>
@@ -107,50 +110,87 @@ function shuffle(arr){
   return arr.map(v=>({v,r:Math.random()})).sort((a,b)=>a.r-b.r).map(x=>x.v);
 }
 
-function generateTeams(){
-  const playerCount = Number(document.getElementById("players").value);
-  const teamSize = playerCount / 2;
-  const selectedPacks = [...document.querySelectorAll("input[type=checkbox]:checked")].map(x=>x.value);
-  let pool = HEROES.filter(h=>selectedPacks.includes(h.pack));
+function formatConfig(format){
+  if(format === "single") return { perPlayer:1, bonus:0, label:"Assigned Heroes" };
+  if(format === "twoPlusBonus") return { perPlayer:2, bonus:2, label:"2 Choices Each + Team Bonus" };
+  if(format === "threeEach") return { perPlayer:3, bonus:0, label:"3 Choices Each" };
+  if(format === "teamPool") return { teamPool:6, label:"6-Hero Team Pool" };
+  if(format === "bigTeamPool") return { teamPool:9, label:"9-Hero Team Pool" };
+}
 
-  if(pool.length < playerCount){
-    alert("Not enough heroes selected.");
-    return;
-  }
-
-  pool = shuffle(pool).sort((a,b)=>a.power-b.power);
-
+function dealBalanced(pool, totalPerTeam){
   const teams = [
-    { name:"Team Sunken Crown", heroes:[], score:0 },
-    { name:"Team Storm Trident", heroes:[], score:0 }
+    { name:"Team Sunken Crown", cards:[], score:0 },
+    { name:"Team Storm Trident", cards:[], score:0 }
   ];
 
-  pool.forEach(hero=>{
-    const eligible = teams.filter(t=>t.heroes.length < teamSize).sort((a,b)=>a.score-b.score);
+  const sorted = shuffle(pool).sort((a,b)=>a.power-b.power);
+
+  sorted.forEach(hero=>{
+    const eligible = teams.filter(t=>t.cards.length < totalPerTeam).sort((a,b)=>a.score-b.score);
     if(eligible.length){
-      eligible[0].heroes.push(hero);
+      eligible[0].cards.push(hero);
       eligible[0].score += hero.power;
     }
   });
 
-  teams.forEach(t=>t.heroes = shuffle(t.heroes));
+  return teams;
+}
 
-  document.getElementById("results").innerHTML = `
-    <div class="teams">
-      ${teams.map(team=>`
-        <div class="team">
-          <h2>${team.name}</h2>
-          ${team.heroes.map((h,i)=>`
-            <div class="pick">
-              <strong>Player ${i+1}: ${h.name}</strong>
-              <div class="meta">${h.role} · ${h.pack} · Tier ${h.tier}</div>
-            </div>
-          `).join("")}
-          <div class="score">Team balance score: ${team.score}</div>
-        </div>
-      `).join("")}
-    </div>
-  `;
+function heroLine(h){
+  return `<div class="pick"><strong>${h.name}</strong><div class="meta">${h.role} · ${h.pack} · Tier ${h.tier}</div></div>`;
+}
+
+function generateTeams(){
+  const format = document.getElementById("format").value;
+  const config = formatConfig(format);
+  const selectedPacks = [...document.querySelectorAll("input[type=checkbox]:checked")].map(x=>x.value);
+  const pool = HEROES.filter(h=>selectedPacks.includes(h.pack));
+
+  const playersPerTeam = 3;
+  const neededPerTeam = config.teamPool || ((config.perPlayer * playersPerTeam) + config.bonus);
+  const totalNeeded = neededPerTeam * 2;
+
+  if(pool.length < totalNeeded){
+    alert(`Not enough heroes selected. This format needs ${totalNeeded} heroes.`);
+    return;
+  }
+
+  const selectedHeroes = shuffle(pool).slice(0,totalNeeded);
+  const teams = dealBalanced(selectedHeroes, neededPerTeam);
+
+  let html = `<h2 style="color:#ffd36b;margin-top:28px;">${config.label}</h2><div class="teams">`;
+
+  teams.forEach(team=>{
+    html += `<div class="team"><h2>${team.name}</h2>`;
+
+    if(config.teamPool){
+      html += `<div class="playerBox">`;
+      team.cards.forEach(h=> html += heroLine(h));
+      html += `</div>`;
+    } else {
+      for(let p=0;p<playersPerTeam;p++){
+        const start = p * config.perPlayer;
+        const playerHeroes = team.cards.slice(start, start + config.perPlayer);
+
+        html += `<div class="playerBox"><strong>Player ${p+1} chooses from:</strong>`;
+        playerHeroes.forEach(h=> html += heroLine(h));
+        html += `</div>`;
+      }
+
+      if(config.bonus > 0){
+        const bonusHeroes = team.cards.slice(playersPerTeam * config.perPlayer);
+        html += `<div class="playerBox bonus"><strong>Shared team bonus pool:</strong>`;
+        bonusHeroes.forEach(h=> html += heroLine(h));
+        html += `</div>`;
+      }
+    }
+
+    html += `<div class="score">Pool balance score: ${team.score}</div></div>`;
+  });
+
+  html += `</div>`;
+  document.getElementById("results").innerHTML = html;
 }
 
 buildPackList();
