@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Guards of Atlantis Team Randomizer</title>
+<style>
+  body {
+    margin: 0;
+    font-family: Georgia, serif;
+    background: radial-gradient(circle at top, #17395c, #07111f 65%);
+    color: #f4ead2;
+  }
+
+  .wrap {
+    max-width: 1000px;
+    margin: auto;
+    padding: 32px 18px;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 40px 20px;
+    border: 2px solid #c9a85d;
+    border-radius: 24px;
+    background:
+      linear-gradient(rgba(7,17,31,.75), rgba(7,17,31,.9)),
+      radial-gradient(circle, #25658a, transparent 60%);
+    box-shadow: 0 0 45px rgba(201,168,93,.25);
+  }
+
+  h1 {
+    font-size: 42px;
+    margin: 0;
+    color: #ffd36b;
+    letter-spacing: 1px;
+  }
+
+  .subtitle {
+    font-size: 18px;
+    opacity: .9;
+    margin-top: 10px;
+  }
+
+  .card {
+    margin-top: 24px;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,211,107,.35);
+    border-radius: 18px;
+    padding: 22px;
+  }
+
+  label, select, button {
+    font-size: 16px;
+  }
+
+  select, input {
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #c9a85d;
+    background: #101d2f;
+    color: #f4ead2;
+  }
+
+  .packs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 18px;
+  }
+
+  .pack {
+    border: 1px solid rgba(255,211,107,.35);
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(0,0,0,.18);
+  }
+
+  button {
+    margin-top: 22px;
+    padding: 14px 22px;
+    border: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #ffd36b, #b9812d);
+    color: #07111f;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  button:hover {
+    filter: brightness(1.08);
+  }
+
+  .teams {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+    margin-top: 26px;
+  }
+
+  .team {
+    border-radius: 20px;
+    padding: 20px;
+    border: 2px solid #c9a85d;
+    background: linear-gradient(180deg, rgba(29,75,108,.85), rgba(8,20,37,.95));
+    box-shadow: 0 0 24px rgba(0,0,0,.35);
+  }
+
+  .team h2 {
+    color: #ffd36b;
+    margin-top: 0;
+  }
+
+  .heroPick {
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 12px;
+    background: rgba(255,255,255,.08);
+    border-left: 5px solid #ffd36b;
+  }
+
+  .tier {
+    font-size: 13px;
+    opacity: .8;
+  }
+
+  .score {
+    margin-top: 14px;
+    font-weight: bold;
+    color: #ffd36b;
+  }
+
+  .note {
+    margin-top: 14px;
+    font-size: 14px;
+    opacity: .8;
+  }
+</style>
+</head>
+
+<body>
+<div class="wrap">
+  <section class="hero">
+    <h1>Guards of Atlantis</h1>
+    <div class="subtitle">Balanced Team Randomizer</div>
+  </section>
+
+  <section class="card">
+    <label for="players">Number of players:</label>
+    <select id="players">
+      <option value="2">2 players</option>
+      <option value="4" selected>4 players</option>
+      <option value="6">6 players</option>
+      <option value="8">8 players</option>
+      <option value="10">10 players</option>
+    </select>
+
+    <h3>Expansions owned</h3>
+    <div class="packs" id="packList"></div>
+
+    <button onclick="generateTeams()">Summon the Guards</button>
+    <div class="note">Balancing uses tier weights. Lower total score = stronger team.</div>
+  </section>
+
+  <section id="results"></section>
+</div>
+
+<script>
+const HEROES = [
+  // Core
+  { name: "Arien the Tidemaster", pack: "Core", tier: "A", power: 2 },
+  { name: "Brogan the Destroyer", pack: "Core", tier: "B", power: 3 },
+  { name: "Tigerclaw the Cutpurse", pack: "Core", tier: "B", power: 3 },
+  { name: "Wasp the Warmaiden", pack: "Core", tier: "A", power: 2 },
+  { name: "Sabina the Gunslinger", pack: "Core", tier: "B", power: 3 },
+  { name: "Xargatha the Changed", pack: "Core", tier: "B", power: 3 },
+  { name: "Dodger the Warlock", pack: "Core", tier: "B", power: 3 },
+
+  // Devoted
+  { name: "Whisper the Outcast", pack: "Devoted", tier: "S", power: 1 },
+  { name: "Misa the Samurai", pack: "Devoted", tier: "S", power: 1 },
+  { name: "Ursafar the Savage", pack: "Devoted", tier: "A", power: 2 },
+  { name: "Silverarrow the Pathfinder", pack: "Devoted", tier: "A", power: 2 },
+  { name: "Tali the Spiritcaller", pack: "Devoted", tier: "A", power: 2 },
+
+  // Other packs – rename pack labels if your box uses different names
+  { name: "Hanu the Trickster", pack: "Hero Pack 2", tier: "S", power: 1 },
+  { name: "Cutter the Sky Pirate", pack: "Hero Pack 2", tier: "S", power: 1 },
+  { name: "Garrus the Gladiator", pack: "Hero Pack 2", tier: "S", power: 1 },
+  { name: "Min the Dragonmonk", pack: "Hero Pack 2", tier: "A", power: 2 },
+  { name: "Trinkets the Scavenger", pack: "Hero Pack 2", tier: "A", power: 2 },
+
+  { name: "Bain the Bounty Hunter", pack: "Hero Pack 3", tier: "A", power: 2 },
+  { name: "Swift the Sharpshooter", pack: "Hero Pack 3", tier: "B", power: 3 },
+  { name: "NebKher the Harbinger", pack: "Hero Pack 3", tier: "B", power: 3 },
+  { name: "Korvus the Ravager", pack: "Hero Pack 3", tier: "B", power: 3 },
+  { name: "Kiri the Shaman", pack: "Hero Pack 3", tier: "B", power: 3 },
+
+  { name: "Ashtekh the Pyromancer", pack: "Hero Pack 4", tier: "C", power: 4 },
+  { name: "Tox the Alchemist", pack: "Hero Pack 4", tier: "C", power: 4 },
+  { name: "Razka the Blood Witch", pack: "Hero Pack 4", tier: "C", power: 4 },
+  { name: "Nia the Oracle", pack: "Hero Pack 4", tier: "C", power: 4 },
+  { name: "Sly the Illusionist", pack: "Hero Pack 4", tier: "C", power: 4 },
+
+  { name: "Vexia the Huntress", pack: "Hero Pack 5", tier: "C", power: 4 },
+  { name: "Zhon the Wanderer", pack: "Hero Pack 5", tier: "D", power: 5 },
+  { name: "Rook the Sentinel", pack: "Hero Pack 5", tier: "D", power: 5 },
+  { name: "Malika the Blade Dancer", pack: "Hero Pack 5", tier: "D", power: 5 },
+  { name: "Drakk the Berserker", pack: "Hero Pack 5", tier: "D", power: 5 }
+];
+
+const packs = [...new Set(HEROES.map(h => h.pack))];
+
+function buildPackList() {
+  const box = document.getElementById("packList");
+  box.innerHTML = packs.map(pack => `
+    <label class="pack">
+      <input type="checkbox" value="${pack}" ${pack === "Core" ? "checked disabled" : "checked"}>
+      ${pack}
+    </label>
+  `).join("");
+}
+
+function shuffle(array) {
+  return array.map(v => ({ v, r: Math.random() }))
+              .sort((a,b) => a.r - b.r)
+              .map(x => x.v);
+}
+
+function generateTeams() {
+  const playerCount = Number(document.getElementById("players").value);
+  const selectedPacks = [...document.querySelectorAll("input[type=checkbox]:checked")].map(x => x.value);
+  let pool = HEROES.filter(h => selectedPacks.includes(h.pack));
+
+  if (pool.length < playerCount) {
+    alert("Not enough heroes selected for this number of players.");
+    return;
+  }
+
+  pool = shuffle(pool);
+
+  const teamSize = playerCount / 2;
+  const teams = [
+    { name: "Team Sunken Crown", heroes: [], score: 0 },
+    { name: "Team Storm Trident", heroes: [], score: 0 }
+  ];
+
+  const sortedPool = pool.sort((a,b) => a.power - b.power);
+
+  for (const hero of sortedPool) {
+    const eligible = teams
+      .filter(t => t.heroes.length < teamSize)
+      .sort((a,b) => a.score - b.score);
+
+    const chosenTeam = eligible[0];
+    chosenTeam.heroes.push(hero);
+    chosenTeam.score += hero.power;
+  }
+
+  teams.forEach(t => t.heroes = shuffle(t.heroes));
+
+  document.getElementById("results").innerHTML = `
+    <div class="teams">
+      ${teams.map(team => `
+        <div class="team">
+          <h2>${team.name}</h2>
+          ${team.heroes.map((h, i) => `
+            <div class="heroPick">
+              <strong>Player ${i + 1}: ${h.name}</strong>
+              <div class="tier">${h.pack} · Tier ${h.tier} · Balance ${h.power}</div>
+            </div>
+          `).join("")}
+          <div class="score">Team balance score: ${team.score}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+buildPackList();
+</script>
+</body>
+</html>
