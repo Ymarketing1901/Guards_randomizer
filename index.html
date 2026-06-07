@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Guards of Atlantis 6P Randomizer</title>
+<title>Guards of Atlantis Draft Randomizer</title>
 <style>
 body{margin:0;font-family:Georgia,serif;background:radial-gradient(circle at top,#18557a,#06101d 70%);color:#f7ead0}
 .wrap{max-width:980px;margin:auto;padding:24px 16px}
@@ -48,7 +48,7 @@ button{width:100%;margin-top:20px;padding:15px;border:0;border-radius:14px;backg
     <div class="packs" id="packList"></div>
 
     <button onclick="generateTeams()">Generate Teams</button>
-    <div class="note">Teams are balanced by approximate hero strength. Lower score = stronger pool.</div>
+    <div class="note">Balance scores are editable in the code. Lower score = treated as stronger.</div>
   </section>
 
   <section id="results"></section>
@@ -56,43 +56,43 @@ button{width:100%;margin-top:20px;padding:15px;border:0;border-radius:14px;backg
 
 <script>
 const HEROES = [
-  { name:"Arien the Tidemaster", pack:"Core", tier:"A", power:2, role:"Support / Control" },
-  { name:"Brogan the Destroyer", pack:"Core", tier:"B", power:3, role:"Bruiser" },
-  { name:"Tigerclaw the Cutpurse", pack:"Core", tier:"B", power:3, role:"Assassin" },
-  { name:"Wasp the Warmaiden", pack:"Core", tier:"A", power:2, role:"Fighter" },
-  { name:"Sabina the Gunslinger", pack:"Core", tier:"B", power:3, role:"Ranged Damage" },
-  { name:"Xargatha the Changed", pack:"Core", tier:"B", power:3, role:"Control" },
-  { name:"Dodger the Warlock", pack:"Core", tier:"B", power:3, role:"Utility" },
+  { name:"Arien the Tidemaster", pack:"Core", tier:"A", power:2 },
+  { name:"Brogan the Destroyer", pack:"Core", tier:"B", power:3 },
+  { name:"Dodger the Warlock", pack:"Core", tier:"B", power:3 },
+  { name:"Tigerclaw the Cutpurse", pack:"Core", tier:"B", power:3 },
+  { name:"Wasp the Warmaiden", pack:"Core", tier:"A", power:2 },
+  { name:"Xargatha the Changed", pack:"Core", tier:"B", power:3 },
+  { name:"Sabina the Commander", pack:"Core", tier:"B", power:3 },
 
-  { name:"Whisper the Outcast", pack:"Devoted", tier:"S", power:1, role:"Playmaker" },
-  { name:"Misa the Samurai", pack:"Devoted", tier:"S", power:1, role:"Duelist" },
-  { name:"Ursafar the Savage", pack:"Devoted", tier:"A", power:2, role:"Bruiser" },
-  { name:"Silverarrow the Pathfinder", pack:"Devoted", tier:"A", power:2, role:"Ranged Damage" },
-  { name:"Tali the Spiritcaller", pack:"Devoted", tier:"A", power:2, role:"Support" },
+  { name:"Whisper the Outcast", pack:"Devoted", tier:"S", power:1 },
+  { name:"Misa the Samurai", pack:"Devoted", tier:"S", power:1 },
+  { name:"Ursafar the Savage", pack:"Devoted", tier:"A", power:2 },
+  { name:"Silverarrow the Pathfinder", pack:"Devoted", tier:"A", power:2 },
+  { name:"Tali the Spiritcaller", pack:"Devoted", tier:"A", power:2 },
 
-  { name:"Hanu the Trickster", pack:"Hero Pack 2", tier:"S", power:1, role:"Mobility / Control" },
-  { name:"Cutter the Sky Pirate", pack:"Hero Pack 2", tier:"S", power:1, role:"Initiator" },
-  { name:"Garrus the Gladiator", pack:"Hero Pack 2", tier:"S", power:1, role:"Fighter" },
-  { name:"Min the Dragonmonk", pack:"Hero Pack 2", tier:"A", power:2, role:"Bruiser" },
-  { name:"Trinkets the Scavenger", pack:"Hero Pack 2", tier:"A", power:2, role:"Utility" },
+  { name:"Min the Dragonmonk", pack:"Renowned", tier:"A", power:2 },
+  { name:"Swift the Sharpshooter", pack:"Renowned", tier:"B", power:3 },
+  { name:"Wuk the Grovekeeper", pack:"Renowned", tier:"B", power:3 },
+  { name:"Hanu the Trickster", pack:"Renowned", tier:"S", power:1 },
+  { name:"Ignatia the Mad", pack:"Renowned", tier:"B", power:3 },
 
-  { name:"Bain the Bounty Hunter", pack:"Hero Pack 3", tier:"A", power:2, role:"Control / Damage" },
-  { name:"Swift the Sharpshooter", pack:"Hero Pack 3", tier:"B", power:3, role:"Ranged Damage" },
-  { name:"NebKher the Harbinger", pack:"Hero Pack 3", tier:"B", power:3, role:"Control" },
-  { name:"Korvus the Ravager", pack:"Hero Pack 3", tier:"B", power:3, role:"Bruiser" },
-  { name:"Kiri the Shaman", pack:"Hero Pack 3", tier:"B", power:3, role:"Support" },
+  { name:"Garrus the Gladiator", pack:"Defiant", tier:"S", power:1 },
+  { name:"Bain the Bounty Hunter", pack:"Defiant", tier:"A", power:2 },
+  { name:"Cutter the Sky Pirate", pack:"Defiant", tier:"S", power:1 },
+  { name:"NebKher the Harbinger", pack:"Defiant", tier:"B", power:3 },
+  { name:"Trinkets the Scavenger", pack:"Defiant", tier:"A", power:2 },
 
-  { name:"Ashtekh the Pyromancer", pack:"Hero Pack 4", tier:"C", power:4, role:"Area Damage" },
-  { name:"Tox the Alchemist", pack:"Hero Pack 4", tier:"C", power:4, role:"Control" },
-  { name:"Razka the Blood Witch", pack:"Hero Pack 4", tier:"C", power:4, role:"Damage / Utility" },
-  { name:"Nia the Oracle", pack:"Hero Pack 4", tier:"C", power:4, role:"Support" },
-  { name:"Sly the Illusionist", pack:"Hero Pack 4", tier:"C", power:4, role:"Trickster" },
+  { name:"Brynn the Seeker", pack:"Wayward", tier:"B", power:3 },
+  { name:"Mortimer the Awakener", pack:"Wayward", tier:"B", power:3 },
+  { name:"Widget and Pyro", pack:"Wayward", tier:"B", power:3 },
+  { name:"Takahide the Warlord", pack:"Wayward", tier:"C", power:4 },
+  { name:"Emmitt the Traveler", pack:"Wayward", tier:"C", power:4 },
 
-  { name:"Vexia the Huntress", pack:"Hero Pack 5", tier:"C", power:4, role:"Assassin" },
-  { name:"Zhon the Wanderer", pack:"Hero Pack 5", tier:"D", power:5, role:"Specialist" },
-  { name:"Rook the Sentinel", pack:"Hero Pack 5", tier:"D", power:5, role:"Tank" },
-  { name:"Malika the Blade Dancer", pack:"Hero Pack 5", tier:"D", power:5, role:"Duelist" },
-  { name:"Drakk the Berserker", pack:"Hero Pack 5", tier:"D", power:5, role:"Bruiser" }
+  { name:"Rowenna the Vanguard", pack:"Arcane", tier:"B", power:3 },
+  { name:"Mrak the Rockshaper", pack:"Arcane", tier:"B", power:3 },
+  { name:"Snorri the Runescribe", pack:"Arcane", tier:"C", power:4 },
+  { name:"Razzle the Fay", pack:"Arcane", tier:"C", power:4 },
+  { name:"Gydion the Archwizard", pack:"Arcane", tier:"C", power:4 }
 ];
 
 const packs = [...new Set(HEROES.map(h => h.pack))];
@@ -134,11 +134,12 @@ function dealBalanced(pool, totalPerTeam){
     }
   });
 
+  teams.forEach(t => t.cards = shuffle(t.cards));
   return teams;
 }
 
 function heroLine(h){
-  return `<div class="pick"><strong>${h.name}</strong><div class="meta">${h.role} · ${h.pack} · Tier ${h.tier}</div></div>`;
+  return `<div class="pick"><strong>${h.name}</strong><div class="meta">${h.pack} · Tier ${h.tier}</div></div>`;
 }
 
 function generateTeams(){
@@ -152,7 +153,7 @@ function generateTeams(){
   const totalNeeded = neededPerTeam * 2;
 
   if(pool.length < totalNeeded){
-    alert(`Not enough heroes selected. This format needs ${totalNeeded} heroes.`);
+    alert(`Not enough heroes selected. This format needs ${totalNeeded} heroes, but your selected packs only include ${pool.length}.`);
     return;
   }
 
